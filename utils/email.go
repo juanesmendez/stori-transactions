@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/smtp"
 	"os"
+	"stori-transactions/environment"
 	"stori-transactions/model"
 	"time"
 )
@@ -22,8 +23,8 @@ type EmailData struct {
 }
 
 func SendEmail(body string) error {
-	from := ""     //FIXME Sacar de envar
-	password := "" //FIXME Sacar de envar
+	from := environment.Email
+	password := environment.EmailPassword
 
 	to := []string{
 		"", //FIXME Sacar de header de un request
