@@ -7,7 +7,7 @@ import (
 
 func main() {
 
-	transactions := utils.ReadTransactions("transactions.csv") //FIXME Check "mount" directory
+	transactions := utils.ReadTransactionsFromCsv("transactions.csv")
 
 	for i, transaction := range transactions {
 		fmt.Printf("Transaction #%d: %v\n", i, transaction)
