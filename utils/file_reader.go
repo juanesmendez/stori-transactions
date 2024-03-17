@@ -12,13 +12,17 @@ import (
 	"time"
 )
 
-func ReadTransactionsFromCsv(fileName string) []model.Transaction {
+func ReadTransactionsFromFile(fileName string) []model.Transaction {
 	records, err := getRecords(fileName)
 
 	if err != nil {
 		return []model.Transaction{}
 	}
 
+	return ReadTransactions(records)
+}
+
+func ReadTransactions(records [][]string) []model.Transaction {
 	var transactions []model.Transaction
 
 	for i, record := range records {
