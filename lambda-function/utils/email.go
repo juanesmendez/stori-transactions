@@ -13,10 +13,7 @@ import (
 )
 
 type EmailData struct {
-	RecipientName string
-
-	ImageURL string
-
+	ImageURL       string
 	Mail           string
 	Balance        float64
 	SummaryByMonth map[time.Month]MonthlyTransactionSummary
@@ -51,8 +48,6 @@ func SendEmail(body string) error {
 
 func StartEmail(transactions []model.Transaction) {
 	data := EmailData{
-		RecipientName: "John Doe", //FIXME De donde sacar el nombre?
-
 		ImageURL:       "https://www.storicard.com/static/images/thumbnail_storicard_small.png",
 		Mail:           environment.ToEmail,
 		Balance:        GetBalance(transactions),
