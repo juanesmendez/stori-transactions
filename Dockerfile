@@ -14,6 +14,6 @@ RUN go build -o main .
 FROM alpine:latest
 
 ENV PORT=8080
-COPY --from=build /app/main /app/main
-#COPY email_template.html /app/email_template.html
+WORKDIR /app
+COPY --from=build /app .
 CMD ["/app/main"]
