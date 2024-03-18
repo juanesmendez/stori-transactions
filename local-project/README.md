@@ -1,7 +1,7 @@
 # stori-transactions
 
 ## How to run?
-Execute the following commands in the root folder of the project, of the `main` branch:
+Execute the following commands standing in the current directory:
 
 1. `git checkout main`
 2. `docker build -t stori-transactions .`
