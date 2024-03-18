@@ -65,7 +65,7 @@ func ReadTransactionsFromCsv(fileName string) []model.Transaction {
 func getRecords(fileName string) ([][]string, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
-		fmt.Println("error getting current working directory:", err)
+		log.Printf("error getting current working directory: %s", err.Error())
 		return [][]string{}, err
 	}
 
