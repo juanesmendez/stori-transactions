@@ -3,23 +3,47 @@ package utils
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"io"
 	"log"
-	"os"
-	"path/filepath"
 	"stori-transactions/model"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func ReadTransactionsFromFile(fileName string) []model.Transaction {
-	records, err := getRecords(fileName)
+func GetFileContentFromS3(sess *session.Session, bucketName, objectKey string) (string, error) {
+	svc := s3.New(sess)
 
-	if err != nil {
-		return []model.Transaction{}
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectKey),
 	}
 
-	return ReadTransactions(records)
+	result, err := svc.GetObject(input)
+	if err != nil {
+		return "", err
+	}
+
+	contentBytes, err := io.ReadAll(result.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(contentBytes), nil
+}
+
+func ParseCSVContent(content string) ([][]string, error) {
+	reader := csv.NewReader(strings.NewReader(content))
+
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
 }
 
 func ReadTransactions(records [][]string) []model.Transaction {
@@ -64,35 +88,6 @@ func ReadTransactions(records [][]string) []model.Transaction {
 	}
 
 	return transactions
-}
-
-func getRecords(fileName string) ([][]string, error) {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		fmt.Println("error getting current working directory:", err)
-		return [][]string{}, err
-	}
-
-	absolutePath := filepath.Join(currentDir, fileName)
-	file, err := os.Open(absolutePath)
-
-	if err != nil {
-		log.Printf("error reading the transactions csv file: %s", err.Error())
-		return [][]string{}, err
-	}
-
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-
-	recordsWithHeader, err := reader.ReadAll()
-
-	if err != nil {
-		log.Printf("error reading transaction records from csv file: %s", err.Error())
-		return [][]string{}, err
-	}
-
-	return recordsWithHeader[1:], nil
 }
 
 func getTransactionId(record []string, rowNum int) (uint64, error) {

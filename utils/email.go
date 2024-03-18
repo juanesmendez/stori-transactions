@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"log"
 	"net/smtp"
 	"os"
 	"stori-transactions/environment"
@@ -27,7 +28,7 @@ func SendEmail(body string) error {
 	password := environment.EmailPassword
 
 	to := []string{
-		"", //FIXME Sacar de header de un request
+		environment.ToEmail,
 	}
 
 	smtpHost := "smtp.gmail.com"
@@ -40,10 +41,10 @@ func SendEmail(body string) error {
 
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(message))
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("error sending email: %s", err.Error())
 		return err
 	}
-	fmt.Println("Email Sent Successfully!")
+	log.Println("Email Sent Successfully!")
 
 	return nil
 }
@@ -52,10 +53,8 @@ func StartEmail(transactions []model.Transaction) {
 	data := EmailData{
 		RecipientName: "John Doe", //FIXME De donde sacar el nombre?
 
-		//FIXME
-		ImageURL: "https://www.storicard.com/static/images/thumbnail_storicard_small.png",
-
-		Mail:           "some@email.com", //FIXME: Traerlo del header
+		ImageURL:       "https://www.storicard.com/static/images/thumbnail_storicard_small.png",
+		Mail:           environment.ToEmail,
 		Balance:        GetBalance(transactions),
 		SummaryByMonth: GroupTransactionsByMonth(transactions),
 		AverageByType:  AverageByType(transactions),
@@ -63,7 +62,7 @@ func StartEmail(transactions []model.Transaction) {
 
 	htmlBytes, err := os.ReadFile("email_template.html")
 	if err != nil {
-		fmt.Println("error reading HTML file:", err)
+		log.Printf("error reading HTML file: %s", err.Error())
 		return
 	}
 
@@ -71,14 +70,14 @@ func StartEmail(transactions []model.Transaction) {
 
 	tmpl, err := template.New("emailTemplate").Parse(htmlTemplate)
 	if err != nil {
-		fmt.Println("error parsing html template:", err)
+		log.Printf("error parsing html template: %s", err.Error())
 		return
 	}
 
 	var tplBuffer bytes.Buffer
 	err = tmpl.Execute(&tplBuffer, data)
 	if err != nil {
-		fmt.Println("error executing template:", err)
+		log.Printf("error executing template: %s", err.Error())
 		return
 	}
 
@@ -86,9 +85,9 @@ func StartEmail(transactions []model.Transaction) {
 
 	err = SendEmail(emailBody)
 	if err != nil {
-		fmt.Println("error sending email:", err)
+		log.Printf("error sending email: %s", err.Error())
 		return
 	}
 
-	fmt.Println("email sent successfully.")
+	log.Println("email sent successfully.")
 }
