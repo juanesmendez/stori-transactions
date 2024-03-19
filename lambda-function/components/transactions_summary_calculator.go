@@ -1,24 +1,24 @@
-package utils
+package components
 
 import (
 	"stori-transactions/model"
 	"time"
 )
 
-type MonthlyTransactionSummary struct {
-	TransactionsCount int
-	Total             float64
-	Average           float64
-	DataByType        map[model.TransactionType]SummaryTransactionType
+type TransactionSummaryCalculator interface {
+	GetBalance(transactions []model.Transaction) float64
+	GroupTransactionsByMonth(transactions []model.Transaction) map[time.Month]model.MonthlyTransactionSummary
+	AverageByType(transactions []model.Transaction) map[model.TransactionType]float64
 }
 
-type SummaryTransactionType struct {
-	TransactionsCount int
-	Total             float64
-	Average           float64
+type TransactionSummaryCalculatorImpl struct{}
+
+func NewTransactionSummaryCalculatorImpl() TransactionSummaryCalculator {
+
+	return &TransactionSummaryCalculatorImpl{}
 }
 
-func GetBalance(transactions []model.Transaction) float64 {
+func (transSummaryCalc *TransactionSummaryCalculatorImpl) GetBalance(transactions []model.Transaction) float64 {
 	var balance float64
 
 	for _, transaction := range transactions {
@@ -28,15 +28,15 @@ func GetBalance(transactions []model.Transaction) float64 {
 	return balance
 }
 
-func GroupTransactionsByMonth(transactions []model.Transaction) map[time.Month]MonthlyTransactionSummary {
-	transactionsSummaryByMonth := getTransactionsSummaryByMonth(transactions)
+func (transSummaryCalc *TransactionSummaryCalculatorImpl) GroupTransactionsByMonth(transactions []model.Transaction) map[time.Month]model.MonthlyTransactionSummary {
+	transactionsSummaryByMonth := transSummaryCalc.getTransactionsSummaryByMonth(transactions)
 
-	return calculateMonthlyAvgValueByTransType(transactionsSummaryByMonth)
+	return transSummaryCalc.calculateMonthlyAvgValueByTransType(transactionsSummaryByMonth)
 }
 
-func AverageByType(transactions []model.Transaction) map[model.TransactionType]float64 {
+func (transSummaryCalc *TransactionSummaryCalculatorImpl) AverageByType(transactions []model.Transaction) map[model.TransactionType]float64 {
 	averageByTransactionType := make(map[model.TransactionType]float64)
-	transactionsSummaryByType := make(map[model.TransactionType]SummaryTransactionType)
+	transactionsSummaryByType := make(map[model.TransactionType]model.SummaryTransactionType)
 
 	for _, transaction := range transactions {
 		transactionSummary := transactionsSummaryByType[transaction.Type]
@@ -56,7 +56,7 @@ func AverageByType(transactions []model.Transaction) map[model.TransactionType]f
 	return averageByTransactionType
 }
 
-func calculateMonthlyAvgValueByTransType(transSummaryByMonth map[time.Month]MonthlyTransactionSummary) map[time.Month]MonthlyTransactionSummary {
+func (transSummaryCalc *TransactionSummaryCalculatorImpl) calculateMonthlyAvgValueByTransType(transSummaryByMonth map[time.Month]model.MonthlyTransactionSummary) map[time.Month]model.MonthlyTransactionSummary {
 	for month, summary := range transSummaryByMonth {
 		average := 0.0
 		if summary.TransactionsCount > 0 {
@@ -79,13 +79,13 @@ func calculateMonthlyAvgValueByTransType(transSummaryByMonth map[time.Month]Mont
 	return transSummaryByMonth
 }
 
-func getTransactionsSummaryByMonth(transactions []model.Transaction) map[time.Month]MonthlyTransactionSummary {
-	transSummaryByMonth := make(map[time.Month]MonthlyTransactionSummary)
+func (transSummaryCalc *TransactionSummaryCalculatorImpl) getTransactionsSummaryByMonth(transactions []model.Transaction) map[time.Month]model.MonthlyTransactionSummary {
+	transSummaryByMonth := make(map[time.Month]model.MonthlyTransactionSummary)
 
 	for _, transaction := range transactions {
 		if _, ok := transSummaryByMonth[transaction.Date.Month()]; !ok {
-			transSummaryByMonth[transaction.Date.Month()] = MonthlyTransactionSummary{
-				DataByType: make(map[model.TransactionType]SummaryTransactionType),
+			transSummaryByMonth[transaction.Date.Month()] = model.MonthlyTransactionSummary{
+				DataByType: make(map[model.TransactionType]model.SummaryTransactionType),
 			}
 		}
 

@@ -1,4 +1,4 @@
-package utils
+package components
 
 import (
 	"encoding/csv"
@@ -14,7 +14,20 @@ import (
 	"time"
 )
 
-func GetFileContentFromS3(sess *session.Session, bucketName, objectKey string) (string, error) {
+type FileReader interface {
+	GetFileContentFromS3(sess *session.Session, bucketName, objectKey string) (string, error)
+	ParseCSVContent(content string) ([][]string, error)
+	ReadTransactions(records [][]string) []model.Transaction
+}
+
+type FileReaderImpl struct{}
+
+func NewFileReaderImpl() FileReader {
+
+	return &FileReaderImpl{}
+}
+
+func (fileReader *FileReaderImpl) GetFileContentFromS3(sess *session.Session, bucketName, objectKey string) (string, error) {
 	svc := s3.New(sess)
 
 	input := &s3.GetObjectInput{
@@ -35,7 +48,7 @@ func GetFileContentFromS3(sess *session.Session, bucketName, objectKey string) (
 	return string(contentBytes), nil
 }
 
-func ParseCSVContent(content string) ([][]string, error) {
+func (fileReader *FileReaderImpl) ParseCSVContent(content string) ([][]string, error) {
 	reader := csv.NewReader(strings.NewReader(content))
 
 	records, err := reader.ReadAll()
@@ -46,32 +59,32 @@ func ParseCSVContent(content string) ([][]string, error) {
 	return records, nil
 }
 
-func ReadTransactions(records [][]string) []model.Transaction {
+func (fileReader *FileReaderImpl) ReadTransactions(records [][]string) []model.Transaction {
 	var transactions []model.Transaction
 
 	for i, record := range records {
 		if len(record) != 3 {
 			continue
 		}
-		transactionId, err := getTransactionId(record, i)
+		transactionId, err := fileReader.getTransactionId(record, i)
 
 		if err != nil {
 			continue
 		}
 
-		date, err := getDate(record, i)
+		date, err := fileReader.getDate(record, i)
 
 		if err != nil {
 			continue
 		}
 
-		transactionType, err := getTransactionType(record, i)
+		transactionType, err := fileReader.getTransactionType(record, i)
 
 		if err != nil {
 			continue
 		}
 
-		transactionValue, err := getTransactionValue(record, i)
+		transactionValue, err := fileReader.getTransactionValue(record, i)
 
 		if err != nil {
 			continue
@@ -90,7 +103,7 @@ func ReadTransactions(records [][]string) []model.Transaction {
 	return transactions
 }
 
-func getTransactionId(record []string, rowNum int) (uint64, error) {
+func (fileReader *FileReaderImpl) getTransactionId(record []string, rowNum int) (uint64, error) {
 	transactionIdStr := record[0]
 	transactionId, err := strconv.ParseUint(transactionIdStr, 10, 64)
 
@@ -102,7 +115,7 @@ func getTransactionId(record []string, rowNum int) (uint64, error) {
 	return transactionId, nil
 }
 
-func getDate(record []string, rowNum int) (time.Time, error) {
+func (fileReader *FileReaderImpl) getDate(record []string, rowNum int) (time.Time, error) {
 	dateStr := record[1]
 	dateParts := strings.Split(dateStr, "/")
 
@@ -129,7 +142,7 @@ func getDate(record []string, rowNum int) (time.Time, error) {
 	return date, nil
 }
 
-func getTransactionType(record []string, rowNum int) (model.TransactionType, error) {
+func (fileReader *FileReaderImpl) getTransactionType(record []string, rowNum int) (model.TransactionType, error) {
 	transactionValueStr := record[2]
 	transactionSign := string(transactionValueStr[0])
 
@@ -144,7 +157,7 @@ func getTransactionType(record []string, rowNum int) (model.TransactionType, err
 	return "", fmt.Errorf("'transaction' field of record #%d is  badly formatted: %s", rowNum, transactionValueStr)
 }
 
-func getTransactionValue(record []string, rowNum int) (float64, error) {
+func (fileReader *FileReaderImpl) getTransactionValue(record []string, rowNum int) (float64, error) {
 	transactionValueStr := record[2]
 	transactionValue, err := strconv.ParseFloat(transactionValueStr, 64)
 
