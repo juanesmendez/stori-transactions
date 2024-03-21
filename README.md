@@ -1,8 +1,18 @@
 # stori-transactions
 
-## How to run?
-Execute the following commands in the root folder of the project, of the `main` branch:
+For detailed instructions, read the README.md file in each of the folders inside this directory.
 
-1. `git checkout main`
-2. `docker build -t stori-transactions .`
-3. `docker run -it -e EMAIL=<any_gmail_mail> -e EMAIL_PASSWORD=<gmail_generated_app_password> -e TO_EMAIL=<recipient_email>  stori-transactions`
+## Directories
+* `/lambda-function`: Contains the code that the AWS lambda function uses to read an event from an S3 bucket that stores `.csv` files, and sends an email with its content summary.
+* `/local-project`: Contains the code that reads a local `.csv` file with transactions, and sends an email via SMTP protocol with a summary of them.
+
+## How to upload files to S3 bucket that contains transactions .csv files?
+
+Use the following curl to upload `.csv` files representing transactions in the S3 bucket named `stori-cvs-transactions`:
+
+```
+curl --location --request PUT 'https://yf58uztgna.execute-api.us-east-2.amazonaws.com/test/stori-cvs-bucket/transactions' \
+--header 'Content-Type: text/csv' \
+--data '@/Users/juanestebanmendez/Downloads/test-api.csv'
+```
+If you use Postman, select the binary option in dropdown when selecting the body tab, and choose a .csv file from your computer.
